@@ -88,6 +88,7 @@ class Module(BaseModule, ResolverMixin, ThreadingMixin):
         # do something leveraging the api methods discussed below
 
         company = self.ripe_request(net, "inetnum", "descr")
+	self.output("Due to many info in netblock description, there may be some junk or other info...")
         self.output("I did found "+company)
 
 #        admin_role = self.ripe_request(admin_handle, "role", "admin-c")

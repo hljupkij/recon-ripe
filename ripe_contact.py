@@ -38,9 +38,14 @@ class Module(BaseModule, ResolverMixin, ThreadingMixin):
 
     def add_columns(self, ):
         try:
-            self.query("ALTER TABLE contacts ADD COLUMN email,phone,fax,handle TEXT")
+            self.query("ALTER TABLE contacts ADD COLUMN phone TEXT")
         except Exception as e:
             print("[*] Column most likely exists.  Error returned: " + str(e))
+
+	try:
+	    self.query("ALTER TABLE contacts ADD COLUMN handle TEXT")
+	except Exception as e:
+	    print("[*] Column most likely exists.  Error returned: " + str(e))
 
 # Send JSON request to RIPE
     def ripe_json_request(self, Query, searchType, searchAttr):
@@ -99,14 +104,18 @@ class Module(BaseModule, ResolverMixin, ThreadingMixin):
 
 #        admin_role = self.ripe_json_request(admin_handle, "role", "admin-c")
 #        self.output("I did found "+admin_role)
-        admin_name = self.(admin_handle,"person","person")
+        admin_name = self.ripe_json_request(admin_handle,"person","person")
         admin_address = self.ripe_json_request(admin_handle,"person","address")
         admin_phone = self.ripe_json_request(admin_handle,"person","phone")
         admin_fax = self.ripe_json_request(admin_handle,"person","fax-no")
-        self.output("I did found "+admin_name+admin_address+admin_phone+admin_phone+admin_fax)
-
-#        self.add_contacts(first_name=self.__normalize_name(employee_first), middle_name =self. __normalize_name(employee_middle), last_name=self.__normalize_name(employee_last), title=self.__normalize_name(position[0]))
-
+	admin_mail = self.ripe_json_request(admin_handle,"person","e-mail")
+        self.output("I did found "+admin_name+admin_address+admin_phone+admin_fax+admin_mail)
+	first_name = admin_name.split(" ",1)[0]
+	last_name = admin_name.rsplit(" ",1)[1]
+	middle_name = admin_name.strip(first_name).rstrip(last_name)
+	self.output("First: %s Middle: %s Last: %s" % (first_name, middle_name, last_name))
+        self.add_contacts(first_name=first_name, middle_name = middle_name, last_name=last_name)
+	self.query('UPDATE contacts SET email=?, phone=?, region=?, handle=? WHERE first_name=? AND last_name=?',(admin_mail, admin_phone,admin_address,admin_handle,first_name, last_name))
 #        net = self.parse_inetnum_to_cidr(str(inetnum))
 #        self.output("Add following net: " + net)
 #        self.add_netblocks(net)

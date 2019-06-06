@@ -47,6 +47,28 @@ class Module(BaseModule, ResolverMixin, ThreadingMixin):
     def module_pre(self):
         # override this method to execute code prior to calling the "module_run" method
         # returned values are passed to the "module_run" method and must be captured in a parameter
+
+	# extend the "netblocks"-table
+        try:
+            self.query("ALTER TABLE netblocks ADD COLUMN admin TEXT")
+        except Exception as e:
+            print("[*] Column in table most likely exists. Error returned: " + str(e))
+
+        try:
+            self.query("ALTER TABLE netblocks ADD COLUMN netname TEXT")
+        except Exception as e:
+            print("[*] Column in table most likely exists. Error returned: " + str(e))
+
+        try:
+            self.query("ALTER TABLE netblocks ADD COLUMN country TEXT")
+        except Exception as e:
+            print("[*] Column most likely exists.  Error returned: " + str(e))
+
+        try:
+            self.query("ALTER TABLE netblocks ADD COLUMN description TEXT")
+        except Exception as e:
+            print("[*] Column most likely exists.  Error returned: " + str(e))
+
         return 1
 
     # mandatory method
@@ -90,7 +112,7 @@ class Module(BaseModule, ResolverMixin, ThreadingMixin):
             self.output("something got wrong, there is no inetnum in response...")
             exit;
 
-        descr = ""
+        description = ""
 
         for attribute in data["objects"]["object"][0]["attributes"]["attribute"]:
             name = attribute["name"]
@@ -99,16 +121,18 @@ class Module(BaseModule, ResolverMixin, ThreadingMixin):
             elif name == "netname":
                     netname = attribute["value"]
             elif name == "descr":
-                    descr += attribute["value"]
+                    description += attribute["value"]
+		    description += ", "
             elif name == "country":
                     country = attribute["value"]
             elif name == "admin-c":
                     admin = attribute["value"]
 
-        self.output("I did found net with netname "+netname+" with IP range "+inetnum+" maintained by "+admin+" and located in "+country+" and following description: "+descr)
+        self.output("I did found net with netname "+netname+" with IP range "+inetnum+" maintained by "+admin+" and located in "+country+" and following description: "+description)
         net = self.parse_inetnum_to_cidr(str(inetnum))
         self.output("Add following net: " + net)
-        self.add_netblocks(net)
+        self.add_netblocks(netblock=net)
+	self.query('UPDATE netblocks SET admin=?, netname=?, country=?, description=? WHERE netblock=?',(admin, netname,country,description, net))
 #        print str(data["objects"]['object'][0]['link']['href'])
 
 # Parse string
